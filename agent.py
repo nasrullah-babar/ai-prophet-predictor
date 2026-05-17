@@ -3,13 +3,12 @@ import json
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
-from duckduckgo_search import DDGS
 import requests
 from dotenv import load_dotenv
 
 load_dotenv()
 
-app = FastAPI(title="Prophet Hacks Superforecaster - Base Rate Engine")
+app = FastAPI(title="Prophet Hacks Superforecaster - Ultimate Calibration Build")
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 MODEL_NAME = "openai/gpt-4o-mini" 
@@ -69,7 +68,7 @@ def call_openrouter(prompt: str) -> str:
     payload = {
         "model": MODEL_NAME,
         "messages": [
-            {"role": "system", "content": "You are a dual-engine agent: a strict forensic text parser AND an expert historical odds-maker. You output valid JSON."},
+            {"role": "system", "content": "You are a forensic data extraction agent. You break down text details into strict structured logic without missing fine print."},
             {"role": "user", "content": prompt}
         ],
         "response_format": {"type": "json_object"}
@@ -82,35 +81,33 @@ def call_openrouter(prompt: str) -> str:
     return response.json()["choices"][0]["message"]["content"]
 
 SUPERFORECASTER_PROMPT = r"""
-You are an elite dual-engine forecaster optimizing for Brier Score. 
+You are an expert quantitative forecaster optimizing for Brier Score verification.
 
-EVENT TO INVESTIGATE:
-- Title: {title}
-- Category: {category}
-- Allowed Outcomes: {outcomes}
+=== MARKET DETAILS ===
+Title: {title}
+Description/Rules: {description}
+Allowed Outcomes: {outcomes}
 
-LIVE SEARCH CONTEXT:
----
+=== SEARCH DOCUMENTS ===
 {search_context}
----
 
-STEP 1: TEXT VERIFICATION
-Read the Search Context. Is the EXACT, official winner of the 2026 event explicitly announced in the text?
-- If YES: Set "status" to "CONFIRMED", and set "identified_winner" to the exact string match.
-- If NO, or if the text is from a past year/different event: Set "status" to "UNKNOWN".
+=== FORENSIC ALGORITHM ===
+Fill out the following structural inspection fields step-by-step:
 
-STEP 2: BASE RATE GENERATION (THE ODDS MAKER)
-You must generate an educated probability distribution based on your vast pre-2024 internal knowledge of these entities. 
-- Do NOT use a flat uniform distribution (e.g. 50/50).
-- Identify the historical heavyweights, incumbents, or #1 seeds. 
-- For binary events: Assign ~0.60 to the historical favorite and ~0.40 to the underdog.
-- For leagues/multi-outcome: Assign ~0.30 to the biggest historical heavyweight, ~0.20 to the runner-up, and distribute the rest among the underdogs. 
+1. "direct_resolution_found": Identify if an official entity explicitly crowns a winner or provides an exact terminal count for the target question. (True/False)
+2. "vote_breakdown_check": If this is a judicial or legislative vote, isolate the entire raw count string (e.g., "6-3 decision"). Then, map exactly which side favored the target entity mentioned in the title/rules, and which side opposed it.
+3. "final_status": Is the exact answer to the target market definitively proven by the text? Select exactly one: "CONFIRMED" or "UNKNOWN".
+4. "verified_winner": If status is CONFIRMED, provide the exact string match from the Allowed Outcomes list. If UNKNOWN, output "None".
 
-REQUIRED JSON OUTPUT:
+=== PRE-2024 ODDS BASE RATES ===
+Generate baseline odds for fallback based on pre-2024 prominence. Never use a flat uniform distribution. Give historical heavyweights or favorites a clear edge (~0.60 for binary favorites, ~0.35 for league heavyweights).
+
+REQUIRED JSON OUTPUT FORMAT:
 {{
-  "investigation": "Brief explanation of search findings.",
-  "status": "CONFIRMED", 
-  "identified_winner": "Exact String or None",
+  "direct_resolution_found": true,
+  "vote_breakdown_check": "Analyze majority vs minority splits relative to the question prompt...",
+  "final_status": "CONFIRMED",
+  "verified_winner": "Exact String Match from Allowed Outcomes list",
   "base_rates": [
     {{"market": "Outcome 1", "probability": 0.60}},
     {{"market": "Outcome 2", "probability": 0.40}}
@@ -125,7 +122,7 @@ async def predict(event: EventInput):
     
     prompt = SUPERFORECASTER_PROMPT.format(
         title=event.title,
-        category=event.category,
+        description=event.description or event.rules,
         outcomes=json.dumps(event.outcomes),
         search_context=search_context
     )
@@ -134,41 +131,34 @@ async def predict(event: EventInput):
         llm_raw_response = call_openrouter(prompt)
         investigation = json.loads(llm_raw_response)
         
-        status = investigation.get("status", "UNKNOWN")
-        identified = investigation.get("identified_winner", "None")
+        status = investigation.get("final_status", "UNKNOWN")
+        identified = str(investigation.get("verified_winner", "None")).strip()
         base_rates = investigation.get("base_rates", [])
         
         probabilities = []
         num_outcomes = len(event.outcomes)
         
         if status == "CONFIRMED" and identified in event.outcomes:
-            # TEXT PARSER WINS: We have hard proof. 0.95 to the winner.
+            # Fact locked: 0.95 to the explicit match
             for out in event.outcomes:
                 if out == identified:
                     probabilities.append({"market": out, "probability": 0.95})
                 else:
                     probabilities.append({"market": out, "probability": round(0.05 / (num_outcomes - 1), 4)})
         else:
-            
-            base_rate_dict = {item["market"]: item["probability"] for item in base_rates}
-            
+            # Fallback to bounded base rates
+            base_rate_dict = {str(item["market"]).strip(): item["probability"] for item in base_rates}
             for out in event.outcomes:
                 raw_prob = base_rate_dict.get(out, 1.0 / num_outcomes)
-                
-                
                 if raw_prob > 0.60:
                     raw_prob = 0.60
-                    
                 probabilities.append({"market": out, "probability": raw_prob})
 
-        
         total = sum(p["probability"] for p in probabilities)
         for p in probabilities:
             p["probability"] = round(p["probability"] / total, 4)
 
-        
         final_payload = {"probabilities": probabilities}
-        
         for prob_obj in probabilities:
             market_name = prob_obj["market"].lower()
             if market_name == "yes":
