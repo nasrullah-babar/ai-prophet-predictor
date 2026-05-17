@@ -1,0 +1,57 @@
+[
+  {
+    "event_ticker": "KXSUPERBOWL-2024",
+    "market_ticker": "KXSUPERBOWL-2024",
+    "title": "Who won Super Bowl LVIII in 2024?",
+    "description": "Resolves to the NFL team that won the 2024 Super Bowl.",
+    "category": "Sports",
+    "rules": "Official NFL results.",
+    "close_time": "2024-02-12T00:00:00Z",
+    "outcomes": ["Kansas City Chiefs", "San Francisco 49ers", "Baltimore Ravens", "Detroit Lions"],
+    "resolved_outcome": { "value": ["Kansas City Chiefs"] }
+  },
+  {
+    "event_ticker": "KXOSCARS-BESTPIC-24",
+    "market_ticker": "KXOSCARS-BESTPIC-24",
+    "title": "Who won Best Picture at the 96th Academy Awards (2024)?",
+    "description": "Resolves to the film that won the Best Picture Oscar in 2024.",
+    "category": "Entertainment",
+    "rules": "Official Academy results.",
+    "close_time": "2024-03-11T00:00:00Z",
+    "outcomes": ["Oppenheimer", "Barbie", "Poor Things", "Killers of the Flower Moon", "The Holdovers"],
+    "resolved_outcome": { "value": ["Oppenheimer"] }
+  },
+  {
+    "event_ticker": "KXUCL-FINAL-2024",
+    "market_ticker": "KXUCL-FINAL-2024",
+    "title": "Who won the 2024 UEFA Champions League Final?",
+    "description": "Resolves to the club that won the 2024 UEFA Champions League Final at Wembley.",
+    "category": "Sports",
+    "rules": "Official UEFA results.",
+    "close_time": "2024-06-02T00:00:00Z",
+    "outcomes": ["Real Madrid", "Borussia Dortmund", "Bayern Munich", "Manchester City"],
+    "resolved_outcome": { "value": ["Real Madrid"] }
+  },
+  {
+    "event_ticker": "KXMASTERS-GOLF-24",
+    "market_ticker": "KXMASTERS-GOLF-24",
+    "title": "Who won the 2024 Masters Tournament in Golf?",
+    "description": "Resolves to the golfer who won the green jacket at the 2024 Masters.",
+    "category": "Sports",
+    "rules": "Official PGA Tour results.",
+    "close_time": "2024-04-15T00:00:00Z",
+    "outcomes": ["Scottie Scheffler", "Rory McIlroy", "Ludvig Aberg", "Max Homa", "Tiger Woods"],
+    "resolved_outcome": { "value": ["Scottie Scheffler"] }
+  },
+  {
+    "event_ticker": "KXUK-ELECTION-24",
+    "market_ticker": "KXUK-ELECTION-24",
+    "title": "Which party won the most seats in the 2024 UK General Election?",
+    "description": "Resolves to the political party that secured the most seats in the UK Parliament following the July 2024 election.",
+    "category": "Politics",
+    "rules": "Official UK Electoral Commission results.",
+    "close_time": "2024-07-06T00:00:00Z",
+    "outcomes": ["Labour Party", "Conservative Party", "Liberal Democrats", "Reform UK"],
+    "resolved_outcome": { "value": ["Labour Party"] }
+  }
+]

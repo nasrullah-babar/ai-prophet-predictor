@@ -94,18 +94,20 @@ Allowed Outcomes: {outcomes}
 === FORENSIC ALGORITHM ===
 Fill out the following structural inspection fields step-by-step:
 
-1. "direct_resolution_found": Identify if an official entity explicitly crowns a winner or provides an exact terminal count for the target question. (True/False)
-2. "vote_breakdown_check": If this is a judicial or legislative vote, isolate the entire raw count string (e.g., "6-3 decision"). Then, map exactly which side favored the target entity mentioned in the title/rules, and which side opposed it.
-3. "final_status": Is the exact answer to the target market definitively proven by the text? Select exactly one: "CONFIRMED" or "UNKNOWN".
-4. "verified_winner": If status is CONFIRMED, provide the exact string match from the Allowed Outcomes list. If UNKNOWN, output "None".
+1. "temporal_date_check": Analyze the dates mentioned in the search text. Does the text explicitly refer to the correct year and timeframe of the target event? (True/False)
+2. "direct_resolution_found": Identify if an official entity explicitly crowns a winner or provides an exact terminal count for the target question. (True/False)
+3. "vote_breakdown_check": If this is a judicial or legislative vote, isolate the entire raw count string. Map exactly which side favored the target entity mentioned in the title/rules, and which side opposed it.
+4. "final_status": Is the exact answer to the target market definitively proven by the text AND temporally verified for the correct year in Step 1? Select exactly one: "CONFIRMED" or "UNKNOWN".
+5. "verified_winner": If status is CONFIRMED, provide the exact string match from the Allowed Outcomes list. If UNKNOWN, output "None".
 
 === PRE-2024 ODDS BASE RATES ===
 Generate baseline odds for fallback based on pre-2024 prominence. Never use a flat uniform distribution. Give historical heavyweights or favorites a clear edge (~0.60 for binary favorites, ~0.35 for league heavyweights).
 
 REQUIRED JSON OUTPUT FORMAT:
 {{
+  "temporal_date_check": true,
   "direct_resolution_found": true,
-  "vote_breakdown_check": "Analyze majority vs minority splits relative to the question prompt...",
+  "vote_breakdown_check": "Analyze majority vs minority splits...",
   "final_status": "CONFIRMED",
   "verified_winner": "Exact String Match from Allowed Outcomes list",
   "base_rates": [
