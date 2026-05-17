@@ -138,6 +138,11 @@ REQUIRED JSON OUTPUT FORMAT:
 }}
 """
 
+@app.get("/health")
+async def health_check():
+    """Wakes up the server for the Prophet Hacks evaluation."""
+    return {"status": "awake", "message": "Ready to forecast"}
+
 @app.post("/predict")
 async def predict(event: EventInput):
     search_query = event.title
