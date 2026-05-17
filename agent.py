@@ -26,27 +26,36 @@ class EventInput(BaseModel):
     outcomes: List[str]
 
 def get_live_context(query: str) -> str:
-    context_str = ""
-    with DDGS() as ddgs:
-        try:
-            news_results = [r for r in ddgs.news(query, max_results=5)]
-            if news_results:
-                context_str += "--- NEWS WIRE ---\n"
-                for i, res in enumerate(news_results):
-                    context_str += f"[{i+1}] {res.get('title')}: {res.get('body')}\n\n"
-        except Exception:
-            pass
+    """Advanced AI-native search using Tavily."""
+    tavily_key = os.getenv("TAVILY_API_KEY")
+    if not tavily_key:
+        print("Warning: TAVILY_API_KEY not found, returning no data.")
+        return "No data."
+        
+    headers = {"Content-Type": "application/json"}
+    payload = {
+        "api_key": tavily_key,
+        "query": query,
+        "search_depth": "advanced",
+        "include_answer": True,
+        "max_results": 5
+    }
+    
+    try:
+        response = requests.post("https://api.tavily.com/search", headers=headers, json=payload)
+        response.raise_for_status()
+        data = response.json()
+        
+        context_str = f"--- TAVILY AI ANSWER ---\n{data.get('answer', 'No direct answer generated.')}\n\n"
+        context_str += "--- SOURCE RESULTS ---\n"
+        
+        for i, res in enumerate(data.get("results", [])):
+            context_str += f"[{i+1}] {res.get('title')}: {res.get('content')}\n\n"
             
-        try:
-            web_results = [r for r in ddgs.text(query, max_results=5)]
-            if web_results:
-                context_str += "--- WEB RESULTS ---\n"
-                for i, res in enumerate(web_results):
-                    context_str += f"[{i+1}] {res.get('title')}: {res.get('body')}\n\n"
-        except Exception:
-            pass
-            
-    return context_str if context_str else "No data."
+        return context_str
+    except Exception as e:
+        print(f"Tavily Search failed: {e}")
+        return "No data."
 
 def call_openrouter(prompt: str) -> str:
     if not OPENROUTER_API_KEY:
