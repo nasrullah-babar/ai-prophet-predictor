@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-app = FastAPI(title="Prophet Hacks Superforecaster - Ultimate Calibration Build")
+app = FastAPI(title="Prophet Hacks Superforecaster - Two-Pass Production Build V2")
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 MODEL_NAME = "openai/gpt-4o-mini" 
@@ -25,36 +25,56 @@ class EventInput(BaseModel):
     outcomes: List[str]
 
 def get_live_context(query: str) -> str:
-    """Advanced AI-native search using Tavily."""
+    """Two-Pass Search to capture definitive facts AND future projections safely."""
     tavily_key = os.getenv("TAVILY_API_KEY")
     if not tavily_key:
-        print("Warning: TAVILY_API_KEY not found, returning no data.")
         return "No data."
         
     headers = {"Content-Type": "application/json"}
-    payload = {
+    context_str = ""
+    
+    
+    payload_fact = {
         "api_key": tavily_key,
         "query": query,
         "search_depth": "advanced",
         "include_answer": True,
-        "max_results": 5
+        "max_results": 3
+    }
+    
+    
+    payload_forecast = {
+        "api_key": tavily_key,
+        "query": f"{query} current odds polling prediction consensus",
+        "search_depth": "advanced",
+        "include_answer": False,
+        "max_results": 3
     }
     
     try:
-        response = requests.post("https://api.tavily.com/search", headers=headers, json=payload)
-        response.raise_for_status()
-        data = response.json()
         
-        context_str = f"--- TAVILY AI ANSWER ---\n{data.get('answer', 'No direct answer generated.')}\n\n"
-        context_str += "--- SOURCE RESULTS ---\n"
-        
-        for i, res in enumerate(data.get("results", [])):
-            context_str += f"[{i+1}] {res.get('title')}: {res.get('content')}\n\n"
-            
-        return context_str
+        res1 = requests.post("https://api.tavily.com/search", headers=headers, json=payload_fact)
+        if res1.status_code == 200:
+            data1 = res1.json()
+            context_str += f"=== PASS 1: HISTORICAL & CONCLUSIVE FACTS ===\n"
+            context_str += f"Summary Answer: {data1.get('answer', 'None')}\n"
+            for res in data1.get("results", []):
+                context_str += f"- {res.get('title')}: {res.get('content')}\n"
     except Exception as e:
-        print(f"Tavily Search failed: {e}")
-        return "No data."
+        print(f"Pass 1 search failed: {e}")
+        
+    try:
+        
+        res2 = requests.post("https://api.tavily.com/search", headers=headers, json=payload_forecast)
+        if res2.status_code == 200:
+            data2 = res2.json()
+            context_str += f"\n=== PASS 2: LIVE FORECASTING & ODDS PROJECTIONS ===\n"
+            for res in data2.get("results", []):
+                context_str += f"- {res.get('title')}: {res.get('content')}\n"
+    except Exception as e:
+        print(f"Pass 2 search failed: {e}")
+        
+    return context_str if context_str else "No data found."
 
 def call_openrouter(prompt: str) -> str:
     if not OPENROUTER_API_KEY:
@@ -68,7 +88,7 @@ def call_openrouter(prompt: str) -> str:
     payload = {
         "model": MODEL_NAME,
         "messages": [
-            {"role": "system", "content": "You are a forensic data extraction agent. You break down text details into strict structured logic without missing fine print."},
+            {"role": "system", "content": "You are a quantitative forecasting system. You meticulously cross-reference query rules against textual records to extract accurate probabilities. You output strict JSON."},
             {"role": "user", "content": prompt}
         ],
         "response_format": {"type": "json_object"}
@@ -81,38 +101,39 @@ def call_openrouter(prompt: str) -> str:
     return response.json()["choices"][0]["message"]["content"]
 
 SUPERFORECASTER_PROMPT = r"""
-You are an expert quantitative forecaster optimizing for Brier Score verification.
+You are an expert prediction market tool optimizing for Brier Score verification.
 
 === MARKET DETAILS ===
 Title: {title}
 Description/Rules: {description}
 Allowed Outcomes: {outcomes}
 
-=== SEARCH DOCUMENTS ===
+=== MERGED SEARCH contexts ===
 {search_context}
 
 === FORENSIC ALGORITHM ===
-Fill out the following structural inspection fields step-by-step:
+Analyze the text buffers step-by-step:
 
-1. "temporal_date_check": Analyze the dates mentioned in the search text. Does the text explicitly refer to the correct year and timeframe of the target event? (True/False)
-2. "direct_resolution_found": Identify if an official entity explicitly crowns a winner or provides an exact terminal count for the target question. (True/False)
-3. "vote_breakdown_check": If this is a judicial or legislative vote, isolate the entire raw count string. Map exactly which side favored the target entity mentioned in the title/rules, and which side opposed it.
-4. "final_status": Is the exact answer to the target market definitively proven by the text AND temporally verified for the correct year in Step 1? Select exactly one: "CONFIRMED" or "UNKNOWN".
-5. "verified_winner": If status is CONFIRMED, provide the exact string match from the Allowed Outcomes list. If UNKNOWN, output "None".
-
-=== PRE-2024 ODDS BASE RATES ===
-Generate baseline odds for fallback based on pre-2024 prominence. Never use a flat uniform distribution. Give historical heavyweights or favorites a clear edge (~0.60 for binary favorites, ~0.35 for league heavyweights).
+1. "temporal_date_check": Identify the exact year or timeline of the events in the search context. Do they match the target market timeframe? (True/False)
+2. "vote_tally_deduction": If evaluating a vote tally (e.g. Supreme Court or Senate records), map out the explicit division. Identify which number maps to the exact condition listed in the market description/rules.
+3. "final_status": 
+   - If a conclusive final winner/count is officially documented and matches your date check, output "CONFIRMED".
+   - If the event is uncompleted/future, but explicit live betting odds, polling percentages, or expert models are documented, output "PROJECTION".
+   - If text data is ambiguous, missing, or contradictory, output "UNKNOWN".
+4. "verified_outcome": If status is CONFIRMED, output the exact string match from Allowed Outcomes. Otherwise, output "None".
+5. "live_odds_weights": If status is PROJECTION, list the outcomes and their derived implied probabilities based on the live text data.
 
 REQUIRED JSON OUTPUT FORMAT:
 {{
   "temporal_date_check": true,
-  "direct_resolution_found": true,
-  "vote_breakdown_check": "Analyze majority vs minority splits...",
+  "vote_tally_deduction": "Detailed textual breakdown of numerical counts to avoid inversion traps...",
   "final_status": "CONFIRMED",
-  "verified_winner": "Exact String Match from Allowed Outcomes list",
+  "verified_outcome": "Exact String Match from Allowed Outcomes",
+  "live_odds_weights": [
+    {{"market": "Outcome 1", "probability": 0.65}}
+  ],
   "base_rates": [
-    {{"market": "Outcome 1", "probability": 0.60}},
-    {{"market": "Outcome 2", "probability": 0.40}}
+    {{"market": "Outcome 1", "probability": 0.55}}
   ]
 }}
 """
@@ -134,35 +155,48 @@ async def predict(event: EventInput):
         investigation = json.loads(llm_raw_response)
         
         status = investigation.get("final_status", "UNKNOWN")
-        identified = str(investigation.get("verified_winner", "None")).strip()
+        identified = str(investigation.get("verified_outcome", "None")).strip()
+        live_odds = investigation.get("live_odds_weights", [])
         base_rates = investigation.get("base_rates", [])
         
         probabilities = []
         num_outcomes = len(event.outcomes)
         
+        
+        def get_clean_mapping(target_list, weights_list, max_clamp):
+            weights_dict = {str(item["market"]).strip(): item["probability"] for item in weights_list}
+            output_list = []
+            for item in target_list:
+                prob = weights_dict.get(str(item).strip(), 1.0 / len(target_list))
+                if prob > max_clamp:
+                    prob = max_clamp
+                output_list.append({"market": item, "probability": prob})
+            return output_list
+
         if status == "CONFIRMED" and identified in event.outcomes:
-            # Fact locked: 0.95 to the explicit match
+            
             for out in event.outcomes:
                 if out == identified:
                     probabilities.append({"market": out, "probability": 0.95})
                 else:
                     probabilities.append({"market": out, "probability": round(0.05 / (num_outcomes - 1), 4)})
+                    
+        elif status == "PROJECTION" and live_odds:
+           
+            probabilities = get_clean_mapping(event.outcomes, live_odds, 0.75)
+                
         else:
-            # Fallback to bounded base rates
-            base_rate_dict = {str(item["market"]).strip(): item["probability"] for item in base_rates}
-            for out in event.outcomes:
-                raw_prob = base_rate_dict.get(out, 1.0 / num_outcomes)
-                if raw_prob > 0.60:
-                    raw_prob = 0.60
-                probabilities.append({"market": out, "probability": raw_prob})
+            
+            probabilities = get_clean_mapping(event.outcomes, base_rates, 0.60)
 
+        
         total = sum(p["probability"] for p in probabilities)
         for p in probabilities:
             p["probability"] = round(p["probability"] / total, 4)
 
         final_payload = {"probabilities": probabilities}
         for prob_obj in probabilities:
-            market_name = prob_obj["market"].lower()
+            market_name = str(prob_obj["market"]).lower()
             if market_name == "yes":
                 final_payload["p_yes"] = prob_obj["probability"]
             elif market_name == "no":
@@ -176,7 +210,7 @@ async def predict(event: EventInput):
         return final_payload
         
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error encountered: {e}")
         num_outcomes = len(event.outcomes)
         fallback_prob = round(1.0 / num_outcomes, 4)
         return {
