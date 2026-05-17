@@ -1,0 +1,55 @@
+{
+  "timestamp": "2026-05-16T19:06:20.647531Z",
+  "predictions": [
+    {
+      "market_ticker": "KXNBASERIES-26MINSASR2",
+      "p_yes": 0.75,
+      "rationale": null
+    },
+    {
+      "market_ticker": "KXBUNDESLIGATOP4-26",
+      "p_yes": 0.85,
+      "rationale": null
+    },
+    {
+      "market_ticker": "KXFACUP-26",
+      "p_yes": 0.3,
+      "rationale": null
+    },
+    {
+      "market_ticker": "KXPREMIERLEAGUE-26",
+      "p_yes": 0.2,
+      "rationale": null
+    },
+    {
+      "market_ticker": "KXEUROLEAGUE-26",
+      "p_yes": 0.15,
+      "rationale": null
+    },
+    {
+      "market_ticker": "KXPREMDARTS-26",
+      "p_yes": 0.2,
+      "rationale": null
+    },
+    {
+      "market_ticker": "KXNBAEAST-26",
+      "p_yes": 0.15,
+      "rationale": null
+    },
+    {
+      "market_ticker": "KXNBAWEST-26",
+      "p_yes": 0.2,
+      "rationale": null
+    },
+    {
+      "market_ticker": "KXNBA-26",
+      "p_yes": 0.1,
+      "rationale": null
+    },
+    {
+      "market_ticker": "KXNHLHART-26",
+      "p_yes": 0.5,
+      "rationale": null
+    }
+  ]
+}
